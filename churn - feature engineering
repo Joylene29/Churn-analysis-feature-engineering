@@ -1,0 +1,215 @@
+import pandas as pd
+import numpy as np
+
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
+
+import matplotlib
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+import plotly
+import plotly.graph_objs as go
+import plotly.figure_factory as ff
+from plotly.offline import init_notebook_mode
+init_notebook_mode(connected=True) # to show plots in notebook
+from plotly.offline import plot, iplot
+import plotly.plotly as py
+from matplotlib import pyplot
+
+
+df=pd.read_csv("C:/Users/M9506575/Desktop/datasets/churn numerical data.csv")
+df
+
+pd.set_option('display.max_columns', 50)
+
+df.head()
+
+pre_df = df.copy()
+pre_df
+
+pre_df.columns = [s.replace(" ", "_") for s in pre_df.columns]
+pre_df.columns
+pre_df
+
+pre_df.describe()
+
+value = pre_df['total_night_charge']/(pre_df['total_night_calls']*pre_df['total_night_minutes'])
+pre_df['cost_per_minute_NIGHT'] = value
+
+value1 = pre_df['total_day_charge']/(pre_df['total_day_calls']*pre_df['total_day_minutes'])
+pre_df['cost_per_minute_DAY'] = value1
+
+value2 = pre_df['total_eve_charge']/(pre_df['total_eve_calls']*pre_df['total_eve_minutes'])
+pre_df['cost_per_minute_EVE'] = value2
+
+value3 = pre_df['total_intl_charge']/(pre_df['total_intl_calls']*pre_df['total_intl_minutes'])
+pre_df['cost_per_minute_INTL'] = value3
+
+pre_df
+
+pre_df.info()
+pre_df.isnull().sum()
+
+pre_df.nunique()
+
+
+
+pre_df["cost_per_minute_DAY"].fillna(0, inplace = True) 
+pre_df["cost_per_minute_EVE"].fillna(0, inplace = True) 
+pre_df["cost_per_minute_INTL"].fillna(0, inplace = True)  
+  
+pre_df
+
+
+le = LabelEncoder()
+le.fit(pre_df['international_plan'])
+pre_df['international_plan'] = le.transform(pre_df['international_plan'])
+
+le = LabelEncoder()
+le.fit(pre_df['voice_mail_plan'])
+pre_df['voice_mail_plan'] = le.transform(pre_df['voice_mail_plan'])
+
+#le = LabelEncoder()
+#le.fit(pre_df['churn'])
+#pre_df['churn'] = le.transform(pre_df['churn'])
+
+
+pre_df['voice_mail_plan']=pre_df['voice_mail_plan'].astype('object')
+pre_df['international_plan']=pre_df['international_plan'].astype('object')
+
+
+pre_df.dtypes
+
+pre_df['total_minutes_in_a_day']=pre_df['total_day_minutes']+pre_df['total_eve_minutes']+pre_df['total_night_minutes']
+
+pre_df
+
+pre_df['total_hours_in_a_day']=pre_df['total_minutes_in_a_day']/60
+
+pre_df
+
+pre_df['total_hours_in_INTL']=pre_df['total_intl_minutes']/60
+
+pre_df
+
+pre_df['total_calls_in_a_day']=pre_df['total_day_calls']+pre_df['total_eve_calls']+pre_df['total_night_calls']
+
+pre_df
+
+pre_df['total_charge_in_a_day']=pre_df['total_day_charge']+pre_df['total_eve_charge']+pre_df['total_night_charge']
+
+pre_df
+
+pre_df.shape
+
+pre_df.drop(["phone_number"],axis=1,inplace=True)
+
+pre_df
+
+
+pre_df.isnull().sum()
+
+
+var = pre_df.groupby('churn').customer_service_calls.sum() #grouped sum of sales at Gender level
+fig = plt.figure()
+var.plot(kind='bar')
+
+
+#not needed
+var=pre_df.groupby(['churn']).sum().stack()
+temp=var.unstack()
+type(temp)
+x_list = temp['total_hours_in_a_day']
+label_list = temp.index
+pyplot.axis("equal") #The pie chart is oval by default. To make it a circle use pyplot.axis("equal")
+#To show the percentage of each pie slice, pass an output format to the autopctparameter 
+plt.pie(x_list,labels=label_list,autopct="%1.1f%%") 
+plt.title("total hours in a day") 
+plt.show()
+
+
+corrmat = pre_df.corr() 
+corrmat
+
+f, ax = plt.subplots(figsize =(9, 8)) 
+sns.heatmap(corrmat, ax = ax, cmap ="YlGnBu", linewidths = 0.1) 
+
+pre_df.drop(["state"],axis=1,inplace=True)
+
+pre_df
+
+
+pre_df.hist(column = 'cost_per_minute_INTL')
+plt.xlabel("cost per minute intl")
+plt.ylabel("Count")
+plt.title("Histogram on cost per minute on international calls")
+plt.show()
+
+pre_df.total_eve_calls.hist(by=pre_df['churn'])
+
+pre_df.number_vmail_messages.hist(by=pre_df['churn'], color= 'pink')
+
+pre_df.cost_per_minute_EVE.hist(by=pre_df['churn'])
+
+sns.barplot(x=pre_df.churn.value_counts().index, y=pre_df.churn.value_counts())
+
+ax = sns.scatterplot(x="cost_per_minute_DAY", y='cost_per_minute_NIGHT', hue="churn",data=pre_df)
+plt.title("total night minutes and night charge")
+
+new_df= pre_df.filter(['account_length', 'area_code', 'number_vmail_messages',
+       'total_day_minutes', 'total_day_calls', 'total_day_charge',
+       'total_eve_minutes', 'total_eve_calls', 'total_eve_charge',
+       'total_night_minutes', 'total_night_calls', 'total_night_charge',
+       'total_intl_minutes', 'total_intl_calls', 'total_intl_charge',
+       'customer_service_calls','cost_per_minute_NIGHT',
+       'cost_per_minute_DAY', 'cost_per_minute_EVE', 'cost_per_minute_INTL',
+       'total_minutes_in_a_day', 'total_hours_in_a_day', 'total_hours_in_INTL',
+       'total_calls_in_a_day', 'total_charge_in_a_day', 'churn'], axis=1)
+
+new_df
+
+from sklearn.preprocessing import StandardScaler
+
+#separating the features from the dataframe
+features = ['account_length', 'area_code', 'number_vmail_messages',
+       'total_day_minutes', 'total_day_calls', 'total_day_charge',
+       'total_eve_minutes', 'total_eve_calls', 'total_eve_charge',
+       'total_night_minutes', 'total_night_calls', 'total_night_charge',
+       'total_intl_minutes', 'total_intl_calls', 'total_intl_charge',
+       'customer_service_calls','cost_per_minute_NIGHT',
+       'cost_per_minute_DAY', 'cost_per_minute_EVE', 'cost_per_minute_INTL',
+       'total_minutes_in_a_day', 'total_hours_in_a_day', 'total_hours_in_INTL',
+       'total_calls_in_a_day', 'total_charge_in_a_day']
+
+#separating the features
+x = new_df.loc[:, features].values
+
+#separating the target
+y = new_df.loc[:,['churn']].values
+
+
+# Standardizing the features
+x = StandardScaler().fit_transform(x)
+
+x
+
+from sklearn.decomposition import PCA
+
+pca = PCA().fit(x)
+#Plotting the Cumulative Summation of the Explained Variance
+plt.figure()
+plt.plot(np.cumsum(pca.explained_variance_ratio_))
+plt.xlabel('Number of Components')
+plt.ylabel('Variance (%)') #for each component
+plt.title('Explained Variance of Telecom dataset')
+plt.show()
+
+pca = PCA(n_components=11)
+principalComponents = pca.fit_transform(x)
+principalDf = pd.DataFrame(data = principalComponents)
+
+pca.explained_variance_ratio_.sum()
+
+principalDf.head()
+
